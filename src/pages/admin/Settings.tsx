@@ -226,7 +226,7 @@ export default function Settings() {
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
               <div className="flex gap-4">
-                <input type="email" defaultValue={user.email} disabled className="form-input flex-1 bg-slate-100 dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-lg px-4 py-2.5 text-slate-500 dark:text-slate-400 cursor-not-allowed" />
+                <input type="email" defaultValue={authUser?.email || user.email} disabled className="form-input flex-1 bg-slate-100 dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-lg px-4 py-2.5 text-slate-500 dark:text-slate-400 cursor-not-allowed" />
                 <button className="px-4 py-2.5 border border-slate-200 dark:border-primary/20 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors">Change</button>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function Settings() {
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Profile URL</label>
               <div className="flex items-center bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-primary/20 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all">
-                <span className="px-4 py-2.5 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-primary/10 border-r border-slate-200 dark:border-primary/20 text-sm">bitme.app/</span>
+                <span className="px-4 py-2.5 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-primary/10 border-r border-slate-200 dark:border-primary/20 text-sm">teamtonic.space/</span>
                 <input
                   type="text"
                   value={username}
@@ -243,6 +243,11 @@ export default function Settings() {
                 />
               </div>
             </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-primary/20">
+              Save Account
+            </button>
           </div>
         </div>
 

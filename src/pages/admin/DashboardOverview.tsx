@@ -10,10 +10,7 @@ export default function DashboardOverview() {
 
   // Derived stats
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
-  const totalRevenue = confirmedBookings.reduce((sum, b) => {
-    const svc = services.find(s => s.id === b.serviceId);
-    return sum + (svc?.price ?? 0);
-  }, 0);
+  const activeServices = services.filter(s => s.isActive).length;
   const totalClicks = links.reduce((sum, l) => sum + l.clicks, 0);
 
   const upcomingBookings = bookings
@@ -72,11 +69,11 @@ export default function DashboardOverview() {
         </div>
         <div className="p-6 bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Revenue</span>
-            <span className="material-symbols-outlined text-primary">payments</span>
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Services</span>
+            <span className="material-symbols-outlined text-primary">design_services</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-bold">${totalRevenue.toLocaleString()}</h3>
+            <h3 className="text-3xl font-bold">{activeServices}</h3>
           </div>
         </div>
       </div>

@@ -83,12 +83,13 @@ function loadState(): AppState {
     if (saved) {
       const parsed = JSON.parse(saved);
       // Ensure auth defaults overrides so we rely on Firebase actual check
-      return { ...parsed, authUser: null, authLoading: true };
+      // Also ensure toasts are cleared so they don't get stuck forever on reload
+      return { ...parsed, authUser: null, authLoading: true, toasts: [] };
     }
   } catch (e) {
     console.warn('Failed to load state', e);
   }
-  return { ...seedData, authUser: null, authLoading: true };
+  return { ...seedData, authUser: null, authLoading: true, toasts: [] };
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -96,7 +97,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Avoid saving auth user flag to local storage directly, let firebase manage the token
-    const stateToSave = { ...state, authUser: null, authLoading: true };
+    // Also do not save toasts to local storage since they are ephemeral
+    const stateToSave = { ...state, authUser: null, authLoading: true, toasts: [] };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [state]);
 

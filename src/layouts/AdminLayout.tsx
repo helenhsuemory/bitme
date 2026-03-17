@@ -112,14 +112,6 @@ export default function AdminLayout() {
                 <span className="text-sm font-semibold">Help Center</span>
               </Link>
             </nav>
-            
-            <div className="mt-auto pt-4">
-              <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Pro Plan</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">Upgrade for advanced analytics and branding.</p>
-                <button className="w-full py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-opacity">Upgrade Now</button>
-              </div>
-            </div>
           </aside>
 
           {/* Main Content */}
