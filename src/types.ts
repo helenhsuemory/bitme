@@ -10,6 +10,10 @@ export interface User {
   themePrefs: ThemePrefs;
   socialLinks: Record<string, string>; // e.g. { twitter: 'https://...', instagram: '...' }
   ownerUid?: string | null;
+  integrations?: {
+    google: boolean;
+    outlook: boolean;
+  };
 }
 
 export interface ThemePrefs {
@@ -26,6 +30,8 @@ export interface LinkItem {
   clicks: number;
   folderId: string | null;
   isActive: boolean;
+  iconColor?: string;
+  fontStyle?: string;
 }
 
 export interface Folder {
@@ -106,7 +112,9 @@ export type AppAction =
   | { type: 'UPDATE_BOOKING'; payload: { id: string; status: BookingStatus } }
   | { type: 'UPDATE_USER'; payload: Partial<User> }
   | { type: 'UPDATE_THEME'; payload: Partial<ThemePrefs> }
+  | { type: 'TOGGLE_INTEGRATION'; payload: 'google' | 'outlook' }
   | { type: 'ADD_TOAST'; payload: Toast }
   | { type: 'REMOVE_TOAST'; payload: string }
   | { type: 'SET_AUTH_USER'; payload: AuthUser | null }
-  | { type: 'SET_AUTH_LOADING'; payload: boolean };
+  | { type: 'SET_AUTH_LOADING'; payload: boolean }
+  | { type: 'SET_STATE'; payload: AppState };

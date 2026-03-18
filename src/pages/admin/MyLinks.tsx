@@ -26,7 +26,7 @@ const isValidUrl = (urlString: string) => {
   return urlPattern.test(urlString);
 };
 
-function SortableLinkItem({ link, onEdit, onDelete }: { link: LinkItem, onEdit: (link: LinkItem) => void, onDelete: (id: string) => void }) {
+const SortableLinkItem: React.FC<{ link: LinkItem, onEdit: (link?: LinkItem) => void, onDelete: (id: string) => void }> = ({ link, onEdit, onDelete }) => {
   const {
     attributes,
     listeners,
@@ -56,11 +56,17 @@ function SortableLinkItem({ link, onEdit, onDelete }: { link: LinkItem, onEdit: 
       >
         <span className="material-symbols-outlined">drag_indicator</span>
       </div>
-      <div className="flex items-center justify-center size-12 rounded-xl bg-primary/10 text-primary">
+      <div 
+        className="flex items-center justify-center size-12 rounded-xl"
+        style={{ 
+          backgroundColor: link.iconColor ? `${link.iconColor}1a` : 'rgba(99, 102, 241, 0.1)', 
+          color: link.iconColor || 'rgb(99, 102, 241)' 
+        }}
+      >
         <span className="material-symbols-outlined">{link.icon}</span>
       </div>
       <div className="flex flex-col flex-1 min-w-0">
-        <h3 className="text-slate-900 dark:text-slate-100 font-bold truncate">{link.title}</h3>
+        <h3 className={`text-slate-900 dark:text-slate-100 font-bold truncate ${link.fontStyle || ''}`}>{link.title}</h3>
         <p className="text-slate-500 dark:text-slate-400 text-sm truncate">{link.url}</p>
       </div>
       <div className="flex flex-col items-end px-4 border-r border-slate-200 dark:border-primary/20">
@@ -141,12 +147,14 @@ function PhoneMockup({ links, folders, user }: { links: LinkItem[], folders: Fol
               <div key={folder.id} className="flex flex-col gap-2">
                 <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1">{folder.title}</h3>
                 <div className="flex flex-col gap-2">
-                  {folderLinks.map((link, index) => (
-                    <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className={`flex items-center justify-center rounded-xl h-12 px-4 ${index === 0 && folder.id === folders[0].id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-primary/10 text-slate-900 dark:text-slate-100'} text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]`}>
-                      <span className="material-symbols-outlined mr-2 text-[18px]">{link.icon}</span>
+                  {folderLinks.map((link, index) => {
+                    const isFirst = index === 0 && folder.id === folders[0].id;
+                    return (
+                    <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className={`flex items-center justify-center rounded-xl h-12 px-4 ${isFirst ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-primary/10 text-slate-900 dark:text-slate-100'} text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98] ${link.fontStyle || ''}`}>
+                      <span className="material-symbols-outlined mr-2 text-[18px]" style={link.iconColor && !isFirst ? { color: link.iconColor } : {}}>{link.icon}</span>
                       {link.title}
                     </a>
-                  ))}
+                  )})}
                 </div>
               </div>
             );
@@ -157,12 +165,14 @@ function PhoneMockup({ links, folders, user }: { links: LinkItem[], folders: Fol
             <div className="flex flex-col gap-2">
               <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1">Other Links</h3>
               <div className="flex flex-col gap-2">
-                {links.filter(l => !l.folderId && l.isActive).map((link, index) => (
-                  <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className={`flex items-center justify-center rounded-xl h-12 px-4 ${folders.length === 0 && index === 0 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-primary/10 text-slate-900 dark:text-slate-100'} text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]`}>
-                    <span className="material-symbols-outlined mr-2 text-[18px]">{link.icon}</span>
+                {links.filter(l => !l.folderId && l.isActive).map((link, index) => {
+                  const isFirstFallback = folders.length === 0 && index === 0;
+                  return (
+                  <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className={`flex items-center justify-center rounded-xl h-12 px-4 ${isFirstFallback ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-200 dark:bg-primary/10 text-slate-900 dark:text-slate-100'} text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98] ${link.fontStyle || ''}`}>
+                    <span className="material-symbols-outlined mr-2 text-[18px]" style={link.iconColor && !isFirstFallback ? { color: link.iconColor } : {}}>{link.icon}</span>
                     {link.title}
                   </a>
-                ))}
+                )})}
               </div>
             </div>
           )}
@@ -185,7 +195,6 @@ export default function MyLinks() {
   const addToast = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LinkItem | null>(null);
   
@@ -194,6 +203,8 @@ export default function MyLinks() {
   const [url, setUrl] = useState('');
   const [icon, setIcon] = useState('link');
   const [folderId, setFolderId] = useState<string | null>(null);
+  const [iconColor, setIconColor] = useState('#0f172a');
+  const [fontStyle, setFontStyle] = useState('');
   const [urlError, setUrlError] = useState('');
   
   // Folder Form State
@@ -219,12 +230,16 @@ export default function MyLinks() {
       setUrl(link.url);
       setIcon(link.icon);
       setFolderId(link.folderId);
+      setIconColor(link.iconColor || '#0f172a');
+      setFontStyle(link.fontStyle || '');
     } else {
       setEditingLink(null);
       setTitle('');
       setUrl('');
       setIcon('link');
       setFolderId(folders.length > 0 ? folders[0].id : null);
+      setIconColor('#0f172a');
+      setFontStyle('');
     }
     setUrlError('');
     setIsModalOpen(true);
@@ -244,7 +259,7 @@ export default function MyLinks() {
     if (!title.trim() || !url.trim() || urlError) return;
 
     if (editingLink) {
-      dispatch({ type: 'UPDATE_LINK', payload: { ...editingLink, title, url, icon, folderId } });
+      dispatch({ type: 'UPDATE_LINK', payload: { ...editingLink, title, url, icon, folderId, iconColor, fontStyle } });
       addToast('Link updated');
     } else {
       const newLink: LinkItem = {
@@ -255,6 +270,8 @@ export default function MyLinks() {
         icon,
         folderId,
         isActive: true,
+        iconColor,
+        fontStyle,
       };
       dispatch({ type: 'ADD_LINK', payload: newLink });
       addToast('Link added');
@@ -306,34 +323,39 @@ export default function MyLinks() {
   const topLink = links.length > 0 ? [...links].sort((a, b) => b.clicks - a.clicks)[0] : null;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto w-full items-start">
-      <div className="flex-1 flex flex-col gap-6 w-full max-w-3xl mx-auto">
+    <div className="flex flex-col gap-10 max-w-3xl mx-auto w-full items-center">
+      {/* Live Preview (Upper Middle) */}
+      <div className="flex flex-col w-[350px] shrink-0">
+        <div className="flex items-center justify-center mb-4 px-2">
+          <h3 className="font-bold text-slate-900 dark:text-white mr-3">Live Preview</h3>
+          <span className="flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Auto-updating
+          </span>
+        </div>
+        <PhoneMockup links={links} folders={folders} user={user} />
+      </div>
+
+      <div className="flex-1 flex flex-col gap-6 w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col">
             <h2 className="text-slate-900 dark:text-slate-100 text-3xl font-extrabold tracking-tight">My Links</h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm">Manage and organize your public profile links.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button 
               onClick={() => setIsFolderModalOpen(true)}
-              className="hidden sm:flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-all text-sm"
             >
-              <span className="material-symbols-outlined">create_new_folder</span>
-              <span>New Folder</span>
-            </button>
-            <button 
-              onClick={() => setIsPreviewModalOpen(true)}
-              className="lg:hidden flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-all"
-            >
-              <span className="material-symbols-outlined">visibility</span>
-              <span className="hidden sm:inline">Preview</span>
+              <span className="material-symbols-outlined text-[18px]">create_new_folder</span>
+              <span className="whitespace-nowrap">New Folder</span>
             </button>
             <button 
               onClick={() => handleOpenModal()}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/25"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/25 text-sm"
             >
-              <span className="material-symbols-outlined">add</span>
-              <span className="hidden sm:inline">Add Link</span>
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span className="whitespace-nowrap">Add Link</span>
             </button>
           </div>
         </div>
@@ -458,32 +480,7 @@ export default function MyLinks() {
       </div>
     </div>
 
-      {/* Desktop Preview */}
-      <div className="hidden lg:flex flex-col w-[350px] shrink-0 sticky top-8">
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h3 className="font-bold text-slate-900 dark:text-white">Live Preview</h3>
-          <span className="flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Auto-updating
-          </span>
-        </div>
-        <PhoneMockup links={links} folders={folders} user={user} />
-      </div>
 
-      {/* Mobile Preview Modal */}
-      {isPreviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm lg:hidden">
-           <div className="relative">
-             <button 
-               onClick={() => setIsPreviewModalOpen(false)} 
-               className="absolute -top-12 right-0 text-white hover:text-slate-300 transition-colors"
-             >
-               <span className="material-symbols-outlined text-3xl">close</span>
-             </button>
-             <PhoneMockup links={links} folders={folders} user={user} />
-           </div>
-        </div>
-      )}
 
       {/* Modal for Add/Edit Link */}
       {isModalOpen && (
@@ -539,6 +536,33 @@ export default function MyLinks() {
                     <option key={f.id} value={f.id}>{f.title}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Style Options</label>
+                <div className="flex gap-4">
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <span className="text-xs text-slate-500 font-medium">Icon Color</span>
+                    <input 
+                      type="color" 
+                      value={iconColor}
+                      onChange={(e) => setIconColor(e.target.value)}
+                      className="w-12 h-10 rounded-lg cursor-pointer border-0 p-1 bg-slate-50 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <span className="text-xs text-slate-500 font-medium">Font Style</span>
+                    <select
+                      value={fontStyle}
+                      onChange={(e) => setFontStyle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white appearance-none text-sm h-10"
+                    >
+                      <option value="">Default (Sans)</option>
+                      <option value="font-serif">Serif (Elegant)</option>
+                      <option value="font-mono">Mono (Technical)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">

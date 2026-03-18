@@ -11,25 +11,27 @@ function isoDate(daysFromNow: number, hour: number, minute: number = 0): string 
 }
 
 export const seedData: AppState = {
+  authUser: null,
+  authLoading: true,
   user: {
     id: 'u1',
-    username: 'alexrivera',
-    email: 'alex@example.com',
-    displayName: 'Alex Rivera',
-    title: 'Digital Product Designer & Strategy Consultant',
-    bio: 'Helping brands scale through design. Specializing in high-growth tech startups and design systems.',
-    avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBI9Zly9IQbxwf6erWAJ3S-mRTpJPVaoUw1p7XoHzOkQyDUkzL6RB9G9cn36xi1HnR2UQUW_Jd5tK51if9UHIMb5V6VmnW9iVV37EP48YdEw_yqoxyocbhVxAh4TXDZi2nLxNJlXk3aY2o-zDGpb5-eNcNfhjYXgA0OOKZZcgzgyFJ0kIhnarmB3Zuc7uWVquRmzixern8vooiytSYIdsAVlW_L_vffe1YaKRDqKwnMZLIJGui43kn0i25e69dvGQPpAY7IXq9O5Hc',
+    username: 'helenhsu',
+    email: 'helen@example.com',
+    displayName: 'Helen Hsu',
+    title: 'Enterprise Risk Strategist | AI & Compliance',
+    bio: 'Helping enterprises scale securely. Specializing in SOX compliance and AI-driven risk solutions.',
+    avatarUrl: 'https://lh3.googleusercontent.com/a/ACg8ocL8jXj7jRz9O3kH5v7o1V2y3n8u0z9s=s288-c-no',
     timezone: 'America/New_York',
     themePrefs: {
-      themeId: 'tech-innovation',
-      primaryColor: '#6C63FF',
+      themeId: 'forest-canopy',
+      primaryColor: '#2D6A4F',
       buttonStyle: 'filled',
     },
     socialLinks: {
-      twitter: 'https://x.com/alexrivera',
-      instagram: 'https://instagram.com/alexrivera',
-      linkedin: 'https://linkedin.com/in/alexrivera',
-      github: 'https://github.com/alexrivera',
+      twitter: '',
+      instagram: 'https://instagram.com/helenhsu',
+      linkedin: 'https://linkedin.com/in/helenhsu',
+      github: '',
       youtube: '',
     },
   },
@@ -40,10 +42,8 @@ export const seedData: AppState = {
   ],
 
   links: [
-    { id: 'l1', title: 'Latest Case Study', url: 'https://case-study-link.com', icon: 'rocket_launch', clicks: 450, folderId: 'f1', isActive: true },
-    { id: 'l2', title: 'Design Portfolio', url: 'https://portfolio-link.com', icon: 'grid_view', clicks: 320, folderId: 'f1', isActive: true },
-    { id: 'l3', title: 'Follow me on X', url: 'https://x.com/alexrivera', icon: 'alternate_email', clicks: 210, folderId: 'f2', isActive: true },
-    { id: 'l4', title: 'Newsletter Subscription', url: 'https://newsletter.com', icon: 'mail', clicks: 150, folderId: 'f2', isActive: true },
+    { id: 'l1', title: 'Venture Studio for Woman', url: 'https://venture-studio.com', icon: 'public', clicks: 0, folderId: 'f1', isActive: true },
+    { id: 'l2', title: 'AI-Powered Workspace', url: 'https://ai-workspace.com', icon: 'dashboard', clicks: 0, folderId: 'f1', isActive: true },
   ],
 
   services: [

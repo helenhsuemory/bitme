@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { AppState, AppAction, Toast, AuthUser } from '../types';
 import { seedData } from '../data/seedData';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, googleProvider, db } from '../lib/firebase';
 import { signInWithPopup, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
@@ -54,6 +55,19 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, user: { ...state.user, ...action.payload } };
     case 'UPDATE_THEME':
       return { ...state, user: { ...state.user, themePrefs: { ...state.user.themePrefs, ...action.payload } } };
+    case 'TOGGLE_INTEGRATION': {
+      const currentIntegrations = state.user.integrations || { google: false, outlook: false };
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          integrations: {
+            ...currentIntegrations,
+            [action.payload]: !currentIntegrations[action.payload]
+          }
+        }
+      };
+    }
 
     // --- Toasts ---
     case 'ADD_TOAST':
@@ -66,6 +80,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, authUser: action.payload };
     case 'SET_AUTH_LOADING':
       return { ...state, authLoading: action.payload };
+    case 'SET_STATE':
+      return { ...state, ...action.payload, authUser: state.authUser, authLoading: state.authLoading, toasts: state.toasts };
 
     default:
       return state;
@@ -103,7 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [state]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         dispatch({ 
           type: 'SET_AUTH_USER', 
@@ -114,6 +130,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             photoURL: user.photoURL || '' 
           } 
         });
+
+        // Fetch user data from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const cloudData = userDoc.data() as Partial<AppState>;
+            dispatch({ type: 'SET_STATE', payload: cloudData as AppState });
+          }
+        } catch (error) {
+          console.error('Error fetching user data from Firestore:', error);
+        }
       } else {
         dispatch({ type: 'SET_AUTH_USER', payload: null });
       }
@@ -121,6 +148,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     return () => unsubscribe();
   }, []);
+
+  // Sync to Firestore when state changes and user is authenticated
+  useEffect(() => {
+    if (state.authUser) {
+      const syncToFirestore = async () => {
+        try {
+          // We only sync the core data, not auth state or toasts
+          const { authUser, authLoading, toasts, ...dataToSync } = state;
+          await setDoc(doc(db, 'users', state.authUser!.uid), dataToSync, { merge: true });
+        } catch (error) {
+          console.error('Error syncing to Firestore:', error);
+        }
+      };
+      
+      // Debounce sync slightly to avoid hitting limits during rapid edits
+      const timer = setTimeout(syncToFirestore, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
 
   return (
     <AppStateContext.Provider value={state}>

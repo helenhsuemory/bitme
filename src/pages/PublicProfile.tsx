@@ -6,6 +6,8 @@ import { Twitter, Instagram, Linkedin, Github, Youtube } from 'lucide-react';
 import { useAppState, useAppDispatch, useToast } from '../context/AppContext';
 import { Service, Booking } from '../types';
 import { getThemeById, ThemeDefinition } from '../data/themes';
+import { db, functions, httpsCallable } from '../lib/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 type BookingStep = 'links' | 'service' | 'datetime' | 'form' | 'confirmed';
 
@@ -45,6 +47,45 @@ export default function PublicProfile() {
   const [guestEmail, setGuestEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
+  const [busySlots, setBusySlots] = useState<{ start: string, end: string }[]>([]);
+
+  // Fetch public profile data if not authenticated
+  useEffect(() => {
+    // If we're already authenticated, the AppContext already handles the sync.
+    // If not, we should try to fetch the "active" profile from Firestore.
+    const fetchPublicData = async () => {
+      try {
+        const q = query(collection(db, 'users'), where('username', '==', 'helenhsu'), limit(1));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const cloudData = querySnapshot.docs[0].data();
+          dispatch({ type: 'SET_STATE', payload: cloudData as any });
+        }
+      } catch (error) {
+        console.error('Error fetching public profile:', error);
+      }
+    };
+
+    if (!user.ownerUid) { // Basic check: if ownerUid is missing, we might need real data
+      fetchPublicData();
+    }
+  }, [user.ownerUid, dispatch]);
+
+  // Fetch busy slots from integrations
+  useEffect(() => {
+    const fetchBusy = async () => {
+      try {
+        const getBusy = httpsCallable(functions, 'getBusySlots');
+        const result: any = await getBusy({ userId: user.id }); // Using owner ID
+        if (result.data?.busy) {
+          setBusySlots(result.data.busy);
+        }
+      } catch (err) {
+        console.error('Failed to fetch busy slots:', err);
+      }
+    };
+    fetchBusy();
+  }, [user.id]);
 
   // Calendar rendering
   const renderCalendar = () => {
@@ -73,11 +114,14 @@ export default function PublicProfile() {
             setSelectedTime(null);
           }}
           className={`p-2 rounded-lg text-center text-sm transition-all ${
-            !isCurrentMonth ? 'text-slate-300 dark:text-slate-700 cursor-default' :
+            !isCurrentMonth ? 'opacity-30 cursor-default' :
             isSelected ? 'bg-primary text-white font-bold shadow-md shadow-primary/20' :
-            !isAvailable ? 'text-slate-300 dark:text-slate-700 cursor-not-allowed line-through' :
+            !isAvailable ? 'opacity-30 cursor-not-allowed line-through' :
             'hover:bg-primary/10 cursor-pointer font-medium'
           }`}
+          style={{ 
+            color: isSelected ? '#fff' : (isAvailable ? theme?.colors.text : theme?.colors.textMuted)
+          }}
         >
           {date.getDate()}
         </button>
@@ -118,13 +162,20 @@ export default function PublicProfile() {
         return slotStart < bEnd && slotEnd > bStart;
       });
 
-      if (!hasConflict) {
+      // CHECK INTEGRATED CALENDAR CONFLICTS
+      const hasExternalConflict = busySlots.some(busy => {
+        const bStart = new Date(busy.start);
+        const bEnd = new Date(busy.end);
+        return slotStart < bEnd && slotEnd > bStart;
+      });
+
+      if (!hasConflict && !hasExternalConflict) {
         slots.push(timeStr);
       }
       currentMinutes += 30; // 30-min increments
     }
     return slots;
-  }, [selectedDate, selectedService, availability, bookings]);
+  }, [selectedDate, selectedService, availability, bookings, busySlots]);
 
   const formatTimeSlot = (time: string) => {
     const [h, m] = time.split(':').map(Number);
@@ -313,11 +364,15 @@ export default function PublicProfile() {
                       {activeServices.map(service => (
                         <label
                           key={service.id}
-                          className={`flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition-colors ${
+                          className={`flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition-all ${
                             selectedService?.id === service.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-slate-200 dark:border-primary/20 hover:border-primary'
+                              ? 'border-primary shadow-sm shadow-primary/20'
+                              : 'hover:border-primary/50'
                           }`}
+                          style={{ 
+                            backgroundColor: selectedService?.id === service.id ? `${theme?.colors.primary}15` : theme?.colors.surface,
+                            borderColor: selectedService?.id === service.id ? theme?.colors.primary : `${theme?.colors.primary}33`
+                          }}
                         >
                           <input
                             checked={selectedService?.id === service.id}
@@ -330,22 +385,23 @@ export default function PublicProfile() {
                             type="radio"
                           />
                           <div className="flex grow flex-col">
-                            <p className="text-slate-900 dark:text-slate-100 text-sm font-bold">
+                            <p className="text-sm font-bold" style={{ color: theme?.colors.text }}>
                               {service.title} ({service.price === 0 ? 'Free' : `$${service.price}`})
                             </p>
-                            <p className="text-slate-500 dark:text-slate-400 text-xs">
+                            <p className="text-xs" style={{ color: theme?.colors.textMuted }}>
                               {service.description} · {service.durationMinutes} min
                             </p>
                           </div>
                         </label>
                       ))}
                       {selectedService && (
-                        <button
-                          onClick={() => setStep('datetime')}
-                          className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors mt-2"
-                        >
-                          Choose Date & Time
-                        </button>
+                          <button
+                            onClick={() => setStep('datetime')}
+                            className="w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors mt-2"
+                            style={{ backgroundColor: theme?.colors.primary, color: '#fff' }}
+                          >
+                            Choose Date & Time
+                          </button>
                       )}
                     </motion.div>
                   )}
@@ -361,17 +417,17 @@ export default function PublicProfile() {
                       <button onClick={() => setStep('service')} className="text-sm text-primary font-bold mb-4 flex items-center gap-1 hover:opacity-80">
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back to services
                       </button>
-                      <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-2xl overflow-hidden p-6 shadow-sm">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="border rounded-2xl overflow-hidden p-6 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{ color: theme?.colors.text }}>
                           <div>
                             <div className="flex items-center justify-between mb-4">
-                              <h3 className="font-bold text-slate-900 dark:text-slate-100">{format(currentMonth, 'MMMM yyyy')}</h3>
+                              <h3 className="font-bold" style={{ color: theme?.colors.text }}>{format(currentMonth, 'MMMM yyyy')}</h3>
                               <div className="flex gap-2">
-                                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 dark:hover:bg-primary/20 rounded-lg transition-colors"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
-                                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 hover:bg-slate-100 dark:hover:bg-primary/20 rounded-lg transition-colors"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
+                                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors" style={{ color: theme?.colors.text }}><span className="material-symbols-outlined text-sm">chevron_left</span></button>
+                                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors" style={{ color: theme?.colors.text }}><span className="material-symbols-outlined text-sm">chevron_right</span></button>
                               </div>
                             </div>
-                            <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-400 mb-2">
+                            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold mb-2" style={{ color: theme?.colors.textMuted }}>
                               <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                             </div>
                             <div className="grid grid-cols-7 gap-1 text-center">
@@ -379,11 +435,11 @@ export default function PublicProfile() {
                             </div>
                           </div>
                           <div className="flex flex-col">
-                            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">
+                            <h3 className="font-bold mb-4" style={{ color: theme?.colors.text }}>
                               {selectedDate ? format(selectedDate, 'EEEE, MMM d') : 'Select a date'}
                             </h3>
                             {selectedDate && timeSlots.length === 0 && (
-                              <p className="text-sm text-slate-400 italic">No available slots on this day.</p>
+                              <p className="text-sm italic" style={{ color: theme?.colors.textMuted }}>No available slots on this day.</p>
                             )}
                             <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
                               {timeSlots.map(time => (
@@ -392,9 +448,13 @@ export default function PublicProfile() {
                                   onClick={() => setSelectedTime(time)}
                                   className={`w-full py-3 rounded-xl border font-medium transition-all ${
                                     selectedTime === time
-                                      ? 'border-primary bg-primary text-white shadow-md shadow-primary/20 font-bold'
-                                      : 'border-slate-200 dark:border-primary/20 text-slate-700 dark:text-slate-300 hover:border-primary'
+                                      ? 'border-primary bg-primary shadow-md shadow-primary/20 font-bold'
+                                      : 'border-slate-200 hover:border-primary'
                                   }`}
+                                  style={{ 
+                                    color: selectedTime === time ? '#fff' : theme?.colors.text,
+                                    borderColor: selectedTime === time ? theme?.colors.primary : `${theme?.colors.primary}22`
+                                  }}
                                 >
                                   {formatTimeSlot(time)}
                                 </button>
@@ -403,7 +463,8 @@ export default function PublicProfile() {
                             {selectedTime && (
                               <button
                                 onClick={() => setStep('form')}
-                                className="mt-4 w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
+                                className="mt-4 w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
+                                style={{ backgroundColor: theme?.colors.primary, color: '#FFFFFF' }}
                               >
                                 Continue
                               </button>
@@ -425,10 +486,10 @@ export default function PublicProfile() {
                       <button onClick={() => setStep('datetime')} className="text-sm text-primary font-bold mb-4 flex items-center gap-1 hover:opacity-80">
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back to calendar
                       </button>
-                      <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-2xl p-6 shadow-sm">
-                        <div className="mb-6 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                          <p className="font-bold text-slate-900 dark:text-slate-100">{selectedService?.title}</p>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      <div className="border rounded-2xl p-6 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
+                        <div className="mb-6 p-4 rounded-xl border" style={{ backgroundColor: `${theme?.colors.primary}10`, borderColor: `${theme?.colors.primary}33` }}>
+                          <p className="font-bold" style={{ color: theme?.colors.text }}>{selectedService?.title}</p>
+                          <p className="text-sm mt-1" style={{ color: theme?.colors.textMuted }}>
                             {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} · {selectedTime && formatTimeSlot(selectedTime)} · {selectedService?.durationMinutes} min
                           </p>
                           {selectedService && selectedService.price > 0 && (
@@ -438,39 +499,55 @@ export default function PublicProfile() {
 
                         <div className="flex flex-col gap-4">
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Your Name *</label>
+                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Your Name *</label>
                             <input
                               type="text"
                               value={guestName}
                               onChange={e => setGuestName(e.target.value)}
                               placeholder="Jane Smith"
-                              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white"
+                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                              style={{ 
+                                backgroundColor: theme?.colors.surface, 
+                                borderColor: `${theme?.colors.primary}44`,
+                                color: theme?.colors.text
+                              }}
                             />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email *</label>
+                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Email *</label>
                             <input
                               type="email"
                               value={guestEmail}
                               onChange={e => setGuestEmail(e.target.value)}
                               placeholder="jane@example.com"
-                              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white"
+                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                              style={{ 
+                                backgroundColor: theme?.colors.surface, 
+                                borderColor: `${theme?.colors.primary}44`,
+                                color: theme?.colors.text
+                              }}
                             />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Notes (optional)</label>
+                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Notes (optional)</label>
                             <textarea
                               value={notes}
                               onChange={e => setNotes(e.target.value)}
                               rows={3}
                               placeholder="Anything you'd like to discuss?"
-                              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white resize-none"
+                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none"
+                              style={{ 
+                                backgroundColor: theme?.colors.surface, 
+                                borderColor: `${theme?.colors.primary}44`,
+                                color: theme?.colors.text
+                              }}
                             />
                           </div>
                           <button
                             onClick={handleBookingSubmit}
                             disabled={!guestName.trim() || !guestEmail.trim()}
-                            className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            className="w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            style={{ backgroundColor: theme?.colors.primary, color: '#FFFFFF' }}
                           >
                             Confirm Booking
                           </button>
@@ -487,30 +564,30 @@ export default function PublicProfile() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-center"
                     >
-                      <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 rounded-2xl p-8 shadow-sm">
-                        <div className="size-20 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-                          <span className="material-symbols-outlined text-emerald-500 text-4xl">check_circle</span>
+                      <div className="border rounded-2xl p-8 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
+                        <div className="size-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: `${theme?.colors.primary}22` }}>
+                          <span className="material-symbols-outlined text-4xl" style={{ color: theme?.colors.primary }}>check_circle</span>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">You're booked!</h3>
-                        <p className="text-slate-500 dark:text-slate-400 mb-6">A confirmation has been sent to {confirmedBooking.guestEmail}</p>
+                        <h3 className="text-2xl font-bold mb-2" style={{ color: theme?.colors.text }}>You're booked!</h3>
+                        <p className="mb-6" style={{ color: theme?.colors.textMuted }}>A confirmation has been sent to {confirmedBooking.guestEmail}</p>
 
-                        <div className="bg-slate-50 dark:bg-black/20 rounded-xl p-4 text-left mb-6">
+                        <div className="rounded-xl p-4 text-left mb-6" style={{ backgroundColor: `${theme?.colors.primary}08` }}>
                           <div className="flex flex-col gap-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Service</span>
-                              <span className="font-bold">{selectedService?.title}</span>
+                              <span style={{ color: theme?.colors.textMuted }}>Service</span>
+                              <span className="font-bold" style={{ color: theme?.colors.text }}>{selectedService?.title}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Date</span>
-                              <span className="font-bold">{format(new Date(confirmedBooking.startTime), 'EEEE, MMM d, yyyy')}</span>
+                              <span style={{ color: theme?.colors.textMuted }}>Date</span>
+                              <span className="font-bold" style={{ color: theme?.colors.text }}>{format(new Date(confirmedBooking.startTime), 'EEEE, MMM d, yyyy')}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Time</span>
-                              <span className="font-bold">{format(new Date(confirmedBooking.startTime), 'h:mm a')} – {format(new Date(confirmedBooking.endTime), 'h:mm a')}</span>
+                              <span style={{ color: theme?.colors.textMuted }}>Time</span>
+                              <span className="font-bold" style={{ color: theme?.colors.text }}>{format(new Date(confirmedBooking.startTime), 'h:mm a')} – {format(new Date(confirmedBooking.endTime), 'h:mm a')}</span>
                             </div>
                             {selectedService && selectedService.price > 0 && (
                               <div className="flex justify-between">
-                                <span className="text-slate-500">Price</span>
+                                <span style={{ color: theme?.colors.textMuted }}>Price</span>
                                 <span className="font-bold text-emerald-500">${selectedService.price.toFixed(2)}</span>
                               </div>
                             )}
