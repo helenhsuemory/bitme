@@ -6,11 +6,13 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Helpers for OAuth
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5001/bitme-admin-auth/us-central1/googleAuthCallback';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'dummy_google_client_id';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'dummy_google_secret';
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5001/bitme-admin-auth-1016/us-central1/googleAuthCallback';
 
 const OUTLOOK_CLIENT_ID = process.env.OUTLOOK_CLIENT_ID || 'dummy_outlook_client_id';
 const OUTLOOK_CLIENT_SECRET = process.env.OUTLOOK_CLIENT_SECRET || 'dummy_outlook_secret';
-const OUTLOOK_REDIRECT_URI = process.env.OUTLOOK_REDIRECT_URI || 'http://localhost:5001/bitme-admin-auth/us-central1/outlookAuthCallback';
+const OUTLOOK_REDIRECT_URI = process.env.OUTLOOK_REDIRECT_URI || 'http://localhost:5001/bitme-admin-auth-1016/us-central1/outlookAuthCallback';
 
 const getGoogleOAuth2Client = () => {
   return new google.auth.OAuth2(
