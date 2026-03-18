@@ -12,15 +12,15 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 type BookingStep = 'links' | 'service' | 'datetime' | 'form' | 'confirmed';
 
 export default function PublicProfile() {
-  const { user, links, folders, services, availability, bookings } = useAppState();
+  const { user, links = [], folders = [], services = [], availability = [], bookings = [] } = useAppState();
   const dispatch = useAppDispatch();
   const addToastMsg = useToast();
 
-  const activeLinks = links.filter(l => l.isActive);
-  const activeServices = services.filter(s => s.isActive);
+  const activeLinks = (links || []).filter(l => l?.isActive);
+  const activeServices = (services || []).filter(s => s?.isActive);
 
   // Resolve active theme
-  const theme = getThemeById(user.themePrefs.themeId);
+  const theme = getThemeById(user?.themePrefs?.themeId || 'ocean-depths');
 
   // Load Google Fonts for the active theme
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function PublicProfile() {
     const fetchBusy = async () => {
       try {
         const getBusy = httpsCallable(functions, 'getBusySlots');
-        const result: any = await getBusy({ userId: user.id }); // Using owner ID
+        const result: any = await getBusy({ userId: user?.id || user?.ownerUid }); // Using owner ID
         if (result.data?.busy) {
           setBusySlots(result.data.busy);
         }
@@ -297,7 +297,7 @@ export default function PublicProfile() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="flex flex-col gap-3 px-4 py-8"
             >
-              {folders.map(folder => {
+              {(folders || []).map(folder => {
                 const folderLinks = activeLinks.filter(l => l.folderId === folder.id);
                 if (folderLinks.length === 0) return null;
                 return (
