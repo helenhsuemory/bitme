@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch, useToast } from '../../context/AppContext';
+import { seedData } from '../../data/seedData';
 import { Twitter, Instagram, Linkedin, Github, Youtube } from 'lucide-react';
 import { themes } from '../../data/themes';
 import { storage, functions, httpsCallable } from '../../lib/firebase';
@@ -44,6 +45,18 @@ export default function Settings() {
   const handleSaveProfile = () => {
     dispatch({ type: 'UPDATE_USER', payload: { displayName, title, bio, username, socialLinks } });
     addToast('Profile updated');
+  };
+
+  const handleResetProfile = () => {
+    if (window.confirm('Are you sure you want to reset your profile to defaults? This will overwrite your current name, bio, and social links with the preset template.')) {
+      const { displayName: d, title: t, bio: b, socialLinks: s } = seedData.user;
+      setDisplayName(d);
+      setTitle(t);
+      setBio(b);
+      setSocialLinks({ ...s });
+      dispatch({ type: 'UPDATE_USER', payload: { displayName: d, title: t, bio: b, socialLinks: s } });
+      addToast('Profile reset to defaults');
+    }
   };
 
   const handleSaveTheme = () => {
@@ -151,7 +164,14 @@ export default function Settings() {
               </div>
             </div>
           </div>
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-between items-center">
+            <button 
+              onClick={handleResetProfile} 
+              className="text-slate-500 hover:text-red-500 text-sm font-medium transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">restart_alt</span>
+              Reset to Defaults
+            </button>
             <button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-primary/20">
               Save Profile
             </button>
