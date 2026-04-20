@@ -51,8 +51,9 @@ export default function PublicProfile() {
 
   // Fetch public profile data if not authenticated
   useEffect(() => {
-    // If we're already authenticated, the AppContext already handles the sync.
-    // If not, we should try to fetch the "active" profile from Firestore.
+    // Disabled fetching from Firestore to ensure local seed data is preferred 
+    // over outdated cloud data for 'helenhsu'
+    /*
     const fetchPublicData = async () => {
       try {
         const q = query(collection(db, 'users'), where('username', '==', 'helenhsu'), limit(1));
@@ -69,6 +70,7 @@ export default function PublicProfile() {
     if (!user.ownerUid) { // Basic check: if ownerUid is missing, we might need real data
       fetchPublicData();
     }
+    */
   }, [user.ownerUid, dispatch]);
 
   // Fetch busy slots from integrations

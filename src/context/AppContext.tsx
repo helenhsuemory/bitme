@@ -91,7 +91,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 const AppStateContext = createContext<AppState | null>(null);
 const AppDispatchContext = createContext<React.Dispatch<AppAction> | null>(null);
 
-const STORAGE_KEY = 'bitme_app_state';
+const STORAGE_KEY = 'bitme_app_state_v2';
 
 function loadState(): AppState {
   try {
@@ -121,14 +121,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        dispatch({ 
-          type: 'SET_AUTH_USER', 
-          payload: { 
-            uid: user.uid, 
-            email: user.email || '', 
-            displayName: user.displayName || '', 
-            photoURL: user.photoURL || '' 
-          } 
+        dispatch({
+          type: 'SET_AUTH_USER',
+          payload: {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || '',
+            photoURL: user.photoURL || ''
+          }
         });
 
         // Fetch user data from Firestore
@@ -161,7 +161,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.error('Error syncing to Firestore:', error);
         }
       };
-      
+
       // Debounce sync slightly to avoid hitting limits during rapid edits
       const timer = setTimeout(syncToFirestore, 1000);
       return () => clearTimeout(timer);
@@ -191,7 +191,7 @@ export function useAppDispatch(): React.Dispatch<AppAction> {
 
 export function useAuth() {
   const { authUser, authLoading } = useAppState();
-  
+
   const loginWithGoogle = useCallback(async () => {
     try {
       await signInWithPopup(auth, googleProvider);
