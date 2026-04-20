@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format, addDays, startOfWeek, addMonths, subMonths, isSameDay, isBefore, startOfDay, addMinutes, parse } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import { Twitter, Instagram, Linkedin, Github, Youtube } from 'lucide-react';
+import { Twitter, Instagram, Linkedin, Github, Youtube, Mail } from 'lucide-react';
 import { useAppState, useAppDispatch, useToast } from '../context/AppContext';
 import { Service, Booking } from '../types';
 import { getThemeById, ThemeDefinition } from '../data/themes';
@@ -17,7 +17,7 @@ export default function PublicProfile() {
   const addToastMsg = useToast();
 
   const activeLinks = (links || []).filter(l => l?.isActive);
-  const activeServices = (services || []).filter(s => s?.isActive);
+  const activeServices = (services || []).filter(s => s?.isActive && s?.title !== '1-hour Strategy Consultation');
 
   // Resolve active theme
   const theme = getThemeById(user?.themePrefs?.themeId || 'ocean-depths');
@@ -113,13 +113,12 @@ export default function PublicProfile() {
             setSelectedDate(date);
             setSelectedTime(null);
           }}
-          className={`p-2 rounded-lg text-center text-sm transition-all ${
-            !isCurrentMonth ? 'opacity-30 cursor-default' :
+          className={`p-2 rounded-lg text-center text-sm transition-all ${!isCurrentMonth ? 'opacity-30 cursor-default' :
             isSelected ? 'bg-primary text-white font-bold shadow-md shadow-primary/20' :
-            !isAvailable ? 'opacity-30 cursor-not-allowed line-through' :
-            'hover:bg-primary/10 cursor-pointer font-medium'
-          }`}
-          style={{ 
+              !isAvailable ? 'opacity-30 cursor-not-allowed line-through' :
+                'hover:bg-primary/10 cursor-pointer font-medium'
+            }`}
+          style={{
             color: isSelected ? '#fff' : (isAvailable ? theme?.colors.text : theme?.colors.textMuted)
           }}
         >
@@ -220,134 +219,104 @@ export default function PublicProfile() {
     setConfirmedBooking(null);
   };
 
-  // Build inline style object from theme
-  const themeStyle: React.CSSProperties = theme ? {
-    '--t-primary': theme.colors.primary,
-    '--t-secondary': theme.colors.secondary,
-    '--t-accent': theme.colors.accent,
-    '--t-bg': theme.colors.background,
-    '--t-surface': theme.colors.surface,
-    '--t-text': theme.colors.text,
-    '--t-muted': theme.colors.textMuted,
-    '--t-heading': `"${theme.fonts.heading}", sans-serif`,
-    '--t-body': `"${theme.fonts.body}", sans-serif`,
-    backgroundColor: theme.colors.background,
-    color: theme.colors.text,
-    fontFamily: `"${theme.fonts.body}", sans-serif`,
-  } as React.CSSProperties : {};
+  // Explicit static styling for the new design
+  const themeStyle: React.CSSProperties = {
+    backgroundColor: '#D3C7D4',
+    color: '#000000',
+    fontFamily: '"Inter", sans-serif',
+  };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden" style={themeStyle}>
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden font-sans" style={{ backgroundColor: '#D3C7D4' }}>
       <div className="layout-container flex h-full grow flex-col">
-        <div className="flex flex-1 justify-center py-5 px-4 md:px-10 lg:px-40">
+        <div className="flex flex-1 justify-center pb-12 pt-4 px-4 md:px-10 lg:px-40">
           <div className="layout-content-container flex flex-col max-w-[640px] flex-1">
-            <header className="flex items-center justify-between whitespace-nowrap border-b px-4 py-3 mb-8" style={{ borderColor: theme ? `${theme.colors.primary}33` : undefined }}>
-              <div className="flex items-center gap-4">
-                <div className="size-6" style={{ color: theme?.colors.primary }}>
-                  <span className="material-symbols-outlined">layers</span>
-                </div>
-                <h2 className="text-lg font-bold leading-tight tracking-tight" style={{ fontFamily: theme ? `"${theme.fonts.heading}", sans-serif` : undefined, color: theme?.colors.text }}>{user.displayName}</h2>
-              </div>
-              <Link to="/admin" className="flex cursor-pointer items-center justify-center rounded-lg h-10 gap-2 text-sm font-bold px-3 transition-colors" style={{ backgroundColor: theme ? `${theme.colors.primary}18` : undefined, color: theme?.colors.primary }}>
-                <span className="material-symbols-outlined text-[20px]">settings</span>
-                Admin
-              </Link>
+            <header className="w-full flex items-center justify-center pt-8 pb-4">
+              {/* Removed top buttons as requested */}
             </header>
-            
+
             {/* Profile Header */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex p-4 flex-col items-center text-center gap-4"
+              className="flex px-4 pt-2 pb-6 flex-col items-center text-center gap-3"
             >
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-32 w-32 ring-4"
-                style={{ backgroundImage: `url("${user.avatarUrl}")`, ringColor: theme ? `${theme.colors.primary}33` : undefined, boxShadow: theme ? `0 0 0 4px ${theme.colors.primary}33` : undefined }}
-              ></div>
-              <div className="flex flex-col items-center justify-center">
-                <h1 className="text-2xl font-bold leading-tight tracking-tight" style={{ fontFamily: theme ? `"${theme.fonts.heading}", sans-serif` : undefined, color: theme?.colors.text }}>{user.displayName}</h1>
-                <p className="text-base font-medium mt-1" style={{ color: theme?.colors.textMuted }}>{user.title}</p>
-                <p className="text-sm mt-2 max-w-sm" style={{ color: theme ? `${theme.colors.textMuted}CC` : undefined }}>{user.bio}</p>
+                className="bg-center bg-no-repeat bg-cover rounded-full h-[120px] w-[120px] overflow-hidden"
+              >
+                <img src="/helen-circle.png" alt="Profile" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.style.backgroundImage = `url("${user.avatarUrl}")`; }} />
               </div>
-              
-              <div className="flex items-center justify-center gap-3 mt-2">
-                {[
-                  { key: 'twitter', icon: Twitter },
-                  { key: 'instagram', icon: Instagram },
-                  { key: 'linkedin', icon: Linkedin },
-                  { key: 'github', icon: Github },
-                  { key: 'youtube', icon: Youtube },
-                ].map(({ key, icon: Icon }) => {
-                  const url = user.socialLinks?.[key];
-                  if (!url) return null;
-                  return (
-                    <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full transition-all active:scale-95" style={{ backgroundColor: theme ? `${theme.colors.primary}18` : undefined, color: theme?.colors.textMuted }} aria-label={key}>
-                      <Icon className="w-5 h-5" />
-                    </a>
-                  );
-                })}
+              <div className="flex flex-col items-center justify-center">
+                <h1 className="text-[26px] font-bold leading-tight tracking-tight text-black">{user.displayName || '@huilunhsu'}</h1>
+                <p className="text-[15px] font-medium mt-1.5 text-black">{user.title || 'Entrepreneur | Consultant | Investor'}</p>
+                {user.bio && <p className="text-sm mt-2 max-w-sm text-black/80">{user.bio}</p>}
+              </div>
+
+              <div className="flex items-center justify-center gap-5 mt-1">
+                <a href="https://www.linkedin.com/in/huilunhsu/" target="_blank" rel="noopener noreferrer" className="p-1 transition-all hover:scale-105 text-black" aria-label="linkedin">
+                  <Linkedin strokeWidth={2.5} className="w-7 h-7" />
+                </a>
+                <a href="https://www.youtube.com/@hehehe_helen" target="_blank" rel="noopener noreferrer" className="p-1 transition-all hover:scale-105 text-black" aria-label="youtube">
+                  <Youtube strokeWidth={2.5} className="w-7 h-7" />
+                </a>
+                <a href="https://www.instagram.com/hehehe_helen/" target="_blank" rel="noopener noreferrer" className="p-1 transition-all hover:scale-105 text-black" aria-label="instagram">
+                  <Instagram strokeWidth={2.5} className="w-7 h-7" />
+                </a>
+                <a href="mailto:helenhsu1016@gmail.com" target="_blank" rel="noopener noreferrer" className="p-1 transition-all hover:scale-105 text-black" aria-label="email">
+                  <Mail strokeWidth={2.5} className="w-7 h-7" />
+                </a>
               </div>
             </motion.div>
 
-            {/* Dynamic Links */}
-            <motion.div 
+            {/* Hardcoded Links */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex flex-col gap-3 px-4 py-8"
+              className="flex flex-col gap-6 px-4 py-4"
             >
-              {(folders || []).map(folder => {
-                const folderLinks = activeLinks.filter(l => l.folderId === folder.id);
-                if (folderLinks.length === 0) return null;
-                return (
-                  <div key={folder.id} className="flex flex-col gap-3">
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider pl-1" style={{ color: theme?.colors.textMuted }}>{folder.title}</h3>
-                    {folderLinks.map((link, idx) => (
-                      <a
-                        key={link.id}
-                        className="flex items-center justify-center rounded-xl h-14 px-5 text-base font-bold transition-all hover:opacity-90 active:scale-[0.98]"
-                        style={idx === 0 && folder === folders[0]
-                          ? { backgroundColor: theme?.colors.primary, color: theme ? '#fff' : undefined, boxShadow: theme ? `0 4px 14px ${theme.colors.primary}33` : undefined }
-                          : { backgroundColor: theme ? `${theme.colors.primary}15` : undefined, color: theme?.colors.text }
-                        }
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <span className="material-symbols-outlined mr-2">{link.icon}</span>
-                        {link.title}
-                      </a>
-                    ))}
-                  </div>
-                );
-              })}
-              {/* Uncategorized */}
-              {activeLinks.filter(l => !l.folderId).map(link => (
+              <div className="flex flex-col gap-3">
                 <a
-                  key={link.id}
-                  className="flex items-center justify-center rounded-xl h-14 px-5 text-base font-bold transition-all hover:opacity-90 active:scale-[0.98]"
-                  style={{ backgroundColor: theme ? `${theme.colors.primary}15` : undefined, color: theme?.colors.text }}
-                  href={link.url}
+                  className="flex items-center justify-center relative bg-white h-[68px] px-5 text-base font-medium transition-all shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] active:scale-[0.98] rounded-xl text-black"
+                  href="https://iabuddy.ai/"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <span className="material-symbols-outlined mr-2">{link.icon}</span>
-                  {link.title}
+                  <img src="https://www.google.com/s2/favicons?domain=iabuddy.ai&sz=128" alt="IAbuddy.ai" className="absolute left-4 w-9 h-9 rounded-lg object-contain bg-white/50" />
+                  <span className="text-center font-bold truncate px-10">IAbuddy.ai: AI copilot for Internal Audit & SOX</span>
                 </a>
-              ))}
+                <a
+                  className="flex items-center justify-center relative bg-white h-[68px] px-5 text-base font-medium transition-all shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] active:scale-[0.98] rounded-xl text-black"
+                  href="https://herinventure.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img src="https://www.google.com/s2/favicons?domain=herinventure.com&sz=128" alt="Her In Venture" className="absolute left-4 w-9 h-9 rounded-lg object-contain bg-white/50" />
+                  <span className="text-center font-bold truncate px-10">Her In Venture: Venture Studio for Woman</span>
+                </a>
+                <a
+                  className="flex items-center justify-center relative bg-white h-[68px] px-5 text-base font-medium transition-all shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] active:scale-[0.98] rounded-xl text-black"
+                  href="https://teamtonic.space/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img src="https://www.google.com/s2/favicons?domain=teamtonic.space&sz=128" alt="TeamTonic" className="absolute left-4 w-9 h-9 rounded-lg object-contain bg-white/50" />
+                  <span className="text-center font-bold truncate px-10">TeamTonic: AI-Powered Workspace</span>
+                </a>
+              </div>
             </motion.div>
 
             {/* Booking Section */}
             {activeServices.length > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="px-4 py-8"
               >
-                <h2 className="text-xl font-bold leading-tight tracking-tight mb-6 flex items-center gap-2" style={{ fontFamily: theme ? `"${theme.fonts.heading}", sans-serif` : undefined, color: theme?.colors.text }}>
-                  <span className="material-symbols-outlined" style={{ color: theme?.colors.primary }}>calendar_today</span>
+                <h2 className="text-xl font-bold leading-tight tracking-tight mb-6 flex items-center gap-2 text-black">
+                  <span className="material-symbols-outlined text-black">calendar_today</span>
                   Book a Session
                 </h2>
 
@@ -359,20 +328,15 @@ export default function PublicProfile() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="flex flex-col gap-4"
+                      className="flex flex-col gap-4 bg-white rounded-2xl p-6 shadow-xl"
                     >
                       {activeServices.map(service => (
                         <label
                           key={service.id}
-                          className={`flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition-all ${
-                            selectedService?.id === service.id
-                              ? 'border-primary shadow-sm shadow-primary/20'
-                              : 'hover:border-primary/50'
-                          }`}
-                          style={{ 
-                            backgroundColor: selectedService?.id === service.id ? `${theme?.colors.primary}15` : theme?.colors.surface,
-                            borderColor: selectedService?.id === service.id ? theme?.colors.primary : `${theme?.colors.primary}33`
-                          }}
+                          className={`flex items-center gap-4 rounded-xl border border-gray-200 p-4 cursor-pointer transition-all ${selectedService?.id === service.id
+                            ? 'bg-gray-50 border-black shadow-sm'
+                            : 'bg-white hover:bg-gray-50 border-transparent'
+                            }`}
                         >
                           <input
                             checked={selectedService?.id === service.id}
@@ -380,28 +344,27 @@ export default function PublicProfile() {
                               setSelectedService(service);
                               setStep('service');
                             }}
-                            className="h-5 w-5 border-2 border-slate-300 dark:border-slate-700 bg-transparent text-primary focus:ring-primary focus:ring-offset-0"
+                            className="h-5 w-5 bg-transparent text-black focus:ring-black border-gray-300 rounded-md"
                             name="service"
                             type="radio"
                           />
                           <div className="flex grow flex-col">
-                            <p className="text-sm font-bold" style={{ color: theme?.colors.text }}>
-                              {service.title} ({service.price === 0 ? 'Free' : `$${service.price}`})
+                            <p className="text-base font-bold text-black">
+                              {service.title} <span className="font-normal opacity-80 text-gray-600">({service.price === 0 ? 'Free' : `$${service.price}`})</span>
                             </p>
-                            <p className="text-xs" style={{ color: theme?.colors.textMuted }}>
+                            <p className="text-sm text-gray-600 mt-0.5">
                               {service.description} · {service.durationMinutes} min
                             </p>
                           </div>
                         </label>
                       ))}
                       {selectedService && (
-                          <button
-                            onClick={() => setStep('datetime')}
-                            className="w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors mt-2"
-                            style={{ backgroundColor: theme?.colors.primary, color: '#fff' }}
-                          >
-                            Choose Date & Time
-                          </button>
+                        <button
+                          onClick={() => setStep('datetime')}
+                          className="w-full mt-4 py-3.5 rounded-xl font-bold shadow-sm hover:bg-gray-800 transition-colors bg-black text-white"
+                        >
+                          Choose Date & Time
+                        </button>
                       )}
                     </motion.div>
                   )}
@@ -414,47 +377,78 @@ export default function PublicProfile() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                     >
-                      <button onClick={() => setStep('service')} className="text-sm text-primary font-bold mb-4 flex items-center gap-1 hover:opacity-80">
+                      <button onClick={() => setStep('service')} className="text-sm font-bold mb-4 flex items-center gap-1 hover:text-gray-600 transition-colors text-black">
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back to services
                       </button>
-                      <div className="border rounded-2xl overflow-hidden p-6 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{ color: theme?.colors.text }}>
+                      <div className="rounded-2xl overflow-hidden p-6 shadow-xl bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-black">
                           <div>
                             <div className="flex items-center justify-between mb-4">
-                              <h3 className="font-bold" style={{ color: theme?.colors.text }}>{format(currentMonth, 'MMMM yyyy')}</h3>
-                              <div className="flex gap-2">
-                                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors" style={{ color: theme?.colors.text }}><span className="material-symbols-outlined text-sm">chevron_left</span></button>
-                                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors" style={{ color: theme?.colors.text }}><span className="material-symbols-outlined text-sm">chevron_right</span></button>
+                              <h3 className="font-bold text-lg">{format(currentMonth, 'MMMM yyyy')}</h3>
+                              <div className="flex gap-2 text-black">
+                                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors hover:bg-gray-100"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
+                                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded-lg transition-colors hover:bg-gray-100"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
                               </div>
                             </div>
-                            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold mb-2" style={{ color: theme?.colors.textMuted }}>
+                            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold mb-2 text-gray-500">
                               <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                             </div>
                             <div className="grid grid-cols-7 gap-1 text-center">
-                              {renderCalendar()}
+                              {(() => {
+                                const year = currentMonth.getFullYear();
+                                const month = currentMonth.getMonth();
+                                const firstDay = new Date(year, month, 1);
+                                const startDate = startOfWeek(firstDay);
+                                const days = [];
+                                const today = startOfDay(new Date());
+
+                                for (let i = 0; i < 35; i++) {
+                                  const date = addDays(startDate, i);
+                                  const isCurrentMonth = date.getMonth() === month;
+                                  const isSelected = selectedDate && isSameDay(date, selectedDate);
+                                  const isPast = isBefore(date, today);
+                                  const dayOfWeek = date.getDay();
+                                  const slot = availability.find(a => a.dayOfWeek === dayOfWeek);
+                                  const isAvailable = isCurrentMonth && !isPast && slot?.enabled;
+
+                                  days.push(
+                                    <button
+                                      key={i}
+                                      disabled={!isAvailable}
+                                      onClick={() => {
+                                        setSelectedDate(date);
+                                        setSelectedTime(null);
+                                      }}
+                                      className={`p-2 rounded-xl text-center text-sm transition-all focus:outline-none ${!isCurrentMonth ? 'opacity-30 cursor-default text-gray-400' :
+                                        isSelected ? 'bg-black text-white font-bold shadow-md' :
+                                          !isAvailable ? 'opacity-30 cursor-not-allowed line-through text-gray-400' :
+                                            'hover:bg-gray-100 cursor-pointer font-medium text-black'
+                                        }`}
+                                    >
+                                      {date.getDate()}
+                                    </button>
+                                  );
+                                }
+                                return days;
+                              })()}
                             </div>
                           </div>
                           <div className="flex flex-col">
-                            <h3 className="font-bold mb-4" style={{ color: theme?.colors.text }}>
+                            <h3 className="font-bold mb-4 text-lg">
                               {selectedDate ? format(selectedDate, 'EEEE, MMM d') : 'Select a date'}
                             </h3>
                             {selectedDate && timeSlots.length === 0 && (
-                              <p className="text-sm italic" style={{ color: theme?.colors.textMuted }}>No available slots on this day.</p>
+                              <p className="text-sm italic text-gray-500">No available slots on this day.</p>
                             )}
-                            <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="flex flex-col gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
                               {timeSlots.map(time => (
                                 <button
                                   key={time}
                                   onClick={() => setSelectedTime(time)}
-                                  className={`w-full py-3 rounded-xl border font-medium transition-all ${
-                                    selectedTime === time
-                                      ? 'border-primary bg-primary shadow-md shadow-primary/20 font-bold'
-                                      : 'border-slate-200 hover:border-primary'
-                                  }`}
-                                  style={{ 
-                                    color: selectedTime === time ? '#fff' : theme?.colors.text,
-                                    borderColor: selectedTime === time ? theme?.colors.primary : `${theme?.colors.primary}22`
-                                  }}
+                                  className={`w-full py-3.5 rounded-xl font-medium transition-all text-sm tracking-wide ${selectedTime === time
+                                    ? 'bg-black text-white shadow-md font-bold border border-black'
+                                    : 'bg-white text-black border border-gray-200 hover:border-gray-400'
+                                    }`}
                                 >
                                   {formatTimeSlot(time)}
                                 </button>
@@ -463,8 +457,7 @@ export default function PublicProfile() {
                             {selectedTime && (
                               <button
                                 onClick={() => setStep('form')}
-                                className="mt-4 w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
-                                style={{ backgroundColor: theme?.colors.primary, color: '#FFFFFF' }}
+                                className="mt-6 w-full py-3.5 rounded-xl font-bold shadow-sm hover:bg-gray-800 transition-colors bg-black text-white"
                               >
                                 Continue
                               </button>
@@ -483,71 +476,55 @@ export default function PublicProfile() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                     >
-                      <button onClick={() => setStep('datetime')} className="text-sm text-primary font-bold mb-4 flex items-center gap-1 hover:opacity-80">
+                      <button onClick={() => setStep('datetime')} className="text-sm font-bold mb-4 flex items-center gap-1 hover:text-gray-600 transition-colors text-black">
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back to calendar
                       </button>
-                      <div className="border rounded-2xl p-6 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
-                        <div className="mb-6 p-4 rounded-xl border" style={{ backgroundColor: `${theme?.colors.primary}10`, borderColor: `${theme?.colors.primary}33` }}>
-                          <p className="font-bold" style={{ color: theme?.colors.text }}>{selectedService?.title}</p>
-                          <p className="text-sm mt-1" style={{ color: theme?.colors.textMuted }}>
+                      <div className="rounded-2xl p-6 shadow-xl bg-white">
+                        <div className="mb-6 p-4 rounded-xl border bg-gray-50 border-gray-200">
+                          <p className="font-bold text-black">{selectedService?.title}</p>
+                          <p className="text-sm mt-1 text-gray-600">
                             {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} · {selectedTime && formatTimeSlot(selectedTime)} · {selectedService?.durationMinutes} min
                           </p>
                           {selectedService && selectedService.price > 0 && (
-                            <p className="text-sm font-bold text-emerald-500 mt-1">${selectedService.price.toFixed(2)}</p>
+                            <p className="text-sm font-bold text-black mt-1">${selectedService.price.toFixed(2)}</p>
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 text-black">
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Your Name *</label>
+                            <label className="text-sm font-bold">Your Name *</label>
                             <input
                               type="text"
                               value={guestName}
                               onChange={e => setGuestName(e.target.value)}
                               placeholder="Jane Smith"
-                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                              style={{ 
-                                backgroundColor: theme?.colors.surface, 
-                                borderColor: `${theme?.colors.primary}44`,
-                                color: theme?.colors.text
-                              }}
+                              className="w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-black/50 focus:border-black outline-none transition-all placeholder-gray-400 text-black bg-white border border-gray-300"
                             />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Email *</label>
+                            <label className="text-sm font-bold">Email *</label>
                             <input
                               type="email"
                               value={guestEmail}
                               onChange={e => setGuestEmail(e.target.value)}
                               placeholder="jane@example.com"
-                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                              style={{ 
-                                backgroundColor: theme?.colors.surface, 
-                                borderColor: `${theme?.colors.primary}44`,
-                                color: theme?.colors.text
-                              }}
+                              className="w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-black/50 focus:border-black outline-none transition-all placeholder-gray-400 text-black bg-white border border-gray-300"
                             />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold" style={{ color: theme?.colors.text }}>Notes (optional)</label>
+                            <label className="text-sm font-bold">Notes (optional)</label>
                             <textarea
                               value={notes}
                               onChange={e => setNotes(e.target.value)}
                               rows={3}
                               placeholder="Anything you'd like to discuss?"
-                              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none"
-                              style={{ 
-                                backgroundColor: theme?.colors.surface, 
-                                borderColor: `${theme?.colors.primary}44`,
-                                color: theme?.colors.text
-                              }}
+                              className="w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-black/50 focus:border-black outline-none transition-all resize-none placeholder-gray-400 text-black bg-white border border-gray-300"
                             />
                           </div>
                           <button
                             onClick={handleBookingSubmit}
                             disabled={!guestName.trim() || !guestEmail.trim()}
-                            className="w-full py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                            style={{ backgroundColor: theme?.colors.primary, color: '#FFFFFF' }}
+                            className="w-full mt-4 py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors bg-black text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Confirm Booking
                           </button>
@@ -564,31 +541,31 @@ export default function PublicProfile() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-center"
                     >
-                      <div className="border rounded-2xl p-8 shadow-sm" style={{ backgroundColor: theme?.colors.surface, borderColor: `${theme?.colors.primary}22` }}>
-                        <div className="size-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: `${theme?.colors.primary}22` }}>
-                          <span className="material-symbols-outlined text-4xl" style={{ color: theme?.colors.primary }}>check_circle</span>
+                      <div className="rounded-2xl p-8 shadow-xl bg-white">
+                        <div className="size-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-gray-50 border border-gray-200">
+                          <span className="material-symbols-outlined text-4xl text-black">check_circle</span>
                         </div>
-                        <h3 className="text-2xl font-bold mb-2" style={{ color: theme?.colors.text }}>You're booked!</h3>
-                        <p className="mb-6" style={{ color: theme?.colors.textMuted }}>A confirmation has been sent to {confirmedBooking.guestEmail}</p>
+                        <h3 className="text-2xl font-bold mb-2 text-black">You're booked!</h3>
+                        <p className="mb-6 text-gray-600">A confirmation has been sent to {confirmedBooking.guestEmail}</p>
 
-                        <div className="rounded-xl p-4 text-left mb-6" style={{ backgroundColor: `${theme?.colors.primary}08` }}>
-                          <div className="flex flex-col gap-2 text-sm">
+                        <div className="rounded-xl p-4 text-left mb-6 bg-gray-50 border border-gray-200">
+                          <div className="flex flex-col gap-2 text-sm text-black">
                             <div className="flex justify-between">
-                              <span style={{ color: theme?.colors.textMuted }}>Service</span>
-                              <span className="font-bold" style={{ color: theme?.colors.text }}>{selectedService?.title}</span>
+                              <span className="text-gray-600">Service</span>
+                              <span className="font-bold">{selectedService?.title}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span style={{ color: theme?.colors.textMuted }}>Date</span>
-                              <span className="font-bold" style={{ color: theme?.colors.text }}>{format(new Date(confirmedBooking.startTime), 'EEEE, MMM d, yyyy')}</span>
+                              <span className="text-gray-600">Date</span>
+                              <span className="font-bold">{format(new Date(confirmedBooking.startTime), 'EEEE, MMM d, yyyy')}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span style={{ color: theme?.colors.textMuted }}>Time</span>
-                              <span className="font-bold" style={{ color: theme?.colors.text }}>{format(new Date(confirmedBooking.startTime), 'h:mm a')} – {format(new Date(confirmedBooking.endTime), 'h:mm a')}</span>
+                              <span className="text-gray-600">Time</span>
+                              <span className="font-bold">{format(new Date(confirmedBooking.startTime), 'h:mm a')} – {format(new Date(confirmedBooking.endTime), 'h:mm a')}</span>
                             </div>
                             {selectedService && selectedService.price > 0 && (
                               <div className="flex justify-between">
-                                <span style={{ color: theme?.colors.textMuted }}>Price</span>
-                                <span className="font-bold text-emerald-500">${selectedService.price.toFixed(2)}</span>
+                                <span className="text-gray-600">Price</span>
+                                <span className="font-bold text-black">${selectedService.price.toFixed(2)}</span>
                               </div>
                             )}
                           </div>
@@ -596,7 +573,7 @@ export default function PublicProfile() {
 
                         <button
                           onClick={resetBooking}
-                          className="text-primary font-bold hover:opacity-80 transition-opacity"
+                          className="font-bold transition-opacity underline text-black hover:text-gray-600"
                         >
                           Book another session
                         </button>
@@ -606,11 +583,9 @@ export default function PublicProfile() {
                 </AnimatePresence>
               </motion.div>
             )}
-            
-            <footer className="mt-auto py-12 flex flex-col items-center border-t gap-2" style={{ borderColor: theme ? `${theme.colors.textMuted}33` : undefined }}>
-              <div className="flex items-center gap-2 opacity-50" style={{ color: theme?.colors.textMuted }}>
-                <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                <p className="text-xs font-medium tracking-wide uppercase">Powered by BitMe</p>
+
+            <footer className="mt-8 py-8 flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center justify-center gap-1 opacity-70 text-black">
               </div>
             </footer>
           </div>

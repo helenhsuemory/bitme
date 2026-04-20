@@ -32,6 +32,7 @@ export interface LinkItem {
   isActive: boolean;
   iconColor?: string;
   fontStyle?: string;
+  thumbnailUrl?: string;
 }
 
 export interface Folder {

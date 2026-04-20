@@ -63,17 +63,17 @@ export const seedData: AppState = {
       durationMinutes: 60,
       price: 150,
       icon: 'psychology',
-      isActive: true,
+      isActive: false,
     },
   ],
 
   availability: [
     { dayOfWeek: 0, enabled: false, startTime: '09:00', endTime: '17:00' },
-    { dayOfWeek: 1, enabled: true,  startTime: '09:00', endTime: '17:00' },
-    { dayOfWeek: 2, enabled: true,  startTime: '09:00', endTime: '17:00' },
-    { dayOfWeek: 3, enabled: true,  startTime: '09:00', endTime: '17:00' },
-    { dayOfWeek: 4, enabled: true,  startTime: '09:00', endTime: '17:00' },
-    { dayOfWeek: 5, enabled: true,  startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 1, enabled: true, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 2, enabled: true, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 3, enabled: true, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 4, enabled: true, startTime: '09:00', endTime: '17:00' },
+    { dayOfWeek: 5, enabled: true, startTime: '09:00', endTime: '17:00' },
     { dayOfWeek: 6, enabled: false, startTime: '09:00', endTime: '17:00' },
   ],
 
